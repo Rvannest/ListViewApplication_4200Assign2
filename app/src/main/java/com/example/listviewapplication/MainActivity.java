@@ -15,13 +15,16 @@ import com.google.android.material.snackbar.Snackbar;
 import java.util.ArrayList;
 
 //for snackbard
-import com.google.android.material.snackbar.Snackbar;
+
 
 public class MainActivity extends AppCompatActivity {
     ListView listView;
     EditText editText;
     Button btn_add;
    // String list[] = {"item1", "item2", "item3", "item4","item5"};
+
+    //for long-press on item
+    int currentlyEditingPosition = -1;
 
     ArrayList<String> arrayList;
 
@@ -73,7 +76,12 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 String itemText = editText.getText().toString();
                 if (!itemText.isEmpty()) {
-                    arrayList.add(itemText);
+                    if (currentlyEditingPosition== -1) {
+                        arrayList.add(itemText);
+                    } else {
+                        arrayList.set(currentlyEditingPosition, itemText);
+                        currentlyEditingPosition = -1;
+                    }
                     FileHandler.writeData(arrayList, getApplicationContext());
                     arrayAdapter.notifyDataSetChanged();
                     editText.setText("");
@@ -84,12 +92,15 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                arrayList.remove(i);
-                arrayAdapter.notifyDataSetChanged();
-                FileHandler.writeData(arrayList, getApplicationContext());
+            public boolean onItemLongClick(AdapterView<?> adapterView, View view, int position, long id) {
+//                arrayList.remove(i);
+//                arrayAdapter.notifyDataSetChanged();
+//                FileHandler.writeData(arrayList, getApplicationContext());
+                editText.setText(arrayList.get(position));
+                currentlyEditingPosition = position;
+                return true;
             }
         });
 
