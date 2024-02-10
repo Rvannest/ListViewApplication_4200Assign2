@@ -1,7 +1,12 @@
 package com.example.listviewapplication;
 
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
@@ -10,11 +15,13 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 
+//for snackbar and floating action button
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
-import java.util.ArrayList;
+import android.content.Intent;
 
-//for snackbard
+import java.util.ArrayList;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -26,17 +33,28 @@ public class MainActivity extends AppCompatActivity {
     //for long-press on item
     int currentlyEditingPosition = -1;
 
+    //for floating action button
+    FloatingActionButton fab_add;
+
+    static final int ADD_TASK_REQUEST = 1;
+
+    //to replace startActivityForResult with ActivityResultLauncher, startActivityForResult is deprecated apparently
+    private ActivityResultLauncher<Intent> addTaskActivityResultLauncher;
+
     ArrayList<String> arrayList;
 
-
     ArrayAdapter arrayAdapter;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         listView = findViewById(R.id.listView);
-        editText =findViewById(R.id.editTextText);
-        btn_add = findViewById(R.id.button);
+
+//        editText =findViewById(R.id.editTextText);
+//        btn_add = findViewById(R.id.button);
+
+        fab_add = findViewById(R.id.fab_add);
 
         //arrayList.add("Data1");
         //arrayList.add("Data2");
@@ -46,64 +64,76 @@ public class MainActivity extends AppCompatActivity {
         listView.setAdapter(arrayAdapter);
 
 
-//        // Set an OnClickListener to the button 'btn_add'. This means that the code inside onClick will be executed when the button is clicked.
+
+        addTaskActivityResultLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                new ActivityResultCallback<ActivityResult>() {
+                    @Override
+                    public void onActivityResult(ActivityResult result) {
+                        if (result.getResultCode() == Activity.RESULT_OK) {
+                            Intent data = result.getData();
+                            if (data != null) {
+                                String task = data.getStringExtra("task");
+                                arrayList.add(task);
+                                arrayAdapter.notifyDataSetChanged();
+                            }
+                        }
+                    }
+                });
+
+        fab_add.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, AddTaskActivity.class);
+                addTaskActivityResultLauncher.launch(intent);
+            }
+        });
+
+
 //        btn_add.setOnClickListener(new View.OnClickListener() {
 //            @Override
 //            public void onClick(View view) {
-//                // Retrieve the text entered in the editText field and convert it to a String.
 //                String itemText = editText.getText().toString();
-//
-//                // Check if the retrieved text is not empty.
 //                if (!itemText.isEmpty()) {
-//                    // If the text is not empty, add it to the 'arrayList'.
-//                    arrayList.add(itemText);
-//                    // Call the 'writeData' method of 'FileHandler' to save the updated 'arrayList' into a file.
+//                    if (currentlyEditingPosition== -1) {
+//                        arrayList.add(itemText);
+//                    } else {
+//                        arrayList.set(currentlyEditingPosition, itemText);
+//                        currentlyEditingPosition = -1;
+//                    }
 //                    FileHandler.writeData(arrayList, getApplicationContext());
-//                    // Notify the 'arrayAdapter' that the data set has changed so it can update the ListView.
 //                    arrayAdapter.notifyDataSetChanged();
-//                    // Clear the editText field to make it ready for the next item input.
 //                    editText.setText("");
 //                } else {
-//                    // If the text is empty, show a Snackbar message on the screen informing the user that an empty item cannot be added.
-//                    // The Snackbar is displayed at the bottom of the screen and lasts for a short duration (LENGTH_LONG).
 //                    Snackbar.make(view, "Cannot add empty item!", Snackbar.LENGTH_LONG).show();
 //                }
 //            }
 //        });
 
-        btn_add.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                String itemText = editText.getText().toString();
-                if (!itemText.isEmpty()) {
-                    if (currentlyEditingPosition== -1) {
-                        arrayList.add(itemText);
-                    } else {
-                        arrayList.set(currentlyEditingPosition, itemText);
-                        currentlyEditingPosition = -1;
-                    }
-                    FileHandler.writeData(arrayList, getApplicationContext());
-                    arrayAdapter.notifyDataSetChanged();
-                    editText.setText("");
-                } else {
-                    Snackbar.make(view, "Cannot add empty item!", Snackbar.LENGTH_LONG).show();
-                }
-            }
-        });
 
-
-        listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-            @Override
-            public boolean onItemLongClick(AdapterView<?> adapterView, View view, int position, long id) {
-//                arrayList.remove(i);
-//                arrayAdapter.notifyDataSetChanged();
-//                FileHandler.writeData(arrayList, getApplicationContext());
-                editText.setText(arrayList.get(position));
-                currentlyEditingPosition = position;
-                return true;
-            }
-        });
+//        listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+//            @Override
+//            public boolean onItemLongClick(AdapterView<?> adapterView, View view, int position, long id) {
+////                arrayList.remove(i);
+////                arrayAdapter.notifyDataSetChanged();
+////                FileHandler.writeData(arrayList, getApplicationContext());
+//                editText.setText(arrayList.get(position));
+//                currentlyEditingPosition = position;
+//                return true;
+//            }
+//        });
 
 
     }
+
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if(requestCode == ADD_TASK_REQUEST && resultCode == RESULT_OK) {
+            String task = data.getStringExtra("task");
+            arrayList.add(task);
+            arrayAdapter.notifyDataSetChanged();
+        }
+    }
+
 }
