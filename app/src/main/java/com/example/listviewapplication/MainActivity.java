@@ -67,19 +67,25 @@ public class MainActivity extends AppCompatActivity {
 
         addTaskActivityResultLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
-                new ActivityResultCallback<ActivityResult>() {
-                    @Override
-                    public void onActivityResult(ActivityResult result) {
+                result -> {
                         if (result.getResultCode() == Activity.RESULT_OK) {
                             Intent data = result.getData();
                             if (data != null) {
                                 String task = data.getStringExtra("task");
-                                arrayList.add(task);
+                                if (data.hasExtra("position")) {
+                                    int position = data.getIntExtra("position", -1);
+                                    if (position != -1) {
+                                        arrayList.set(position, task);
+                                    }
+                                } else {
+                                    arrayList.add(task);
+                                }
                                 arrayAdapter.notifyDataSetChanged();
                             }
                         }
-                    }
                 });
+
+
 
         fab_add.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -122,6 +128,24 @@ public class MainActivity extends AppCompatActivity {
 //                return true;
 //            }
 //        });
+
+        //copied this from above, modifying it for part V of the assignment
+        listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> adapterView, View view, int position, long id) {
+                Intent intent = new Intent(MainActivity.this, AddTaskActivity.class);
+                String taskToEdit = arrayList.get(position);
+                intent.putExtra("task", taskToEdit);
+                intent.putExtra("position", position);
+                addTaskActivityResultLauncher.launch(intent);
+//                arrayList.remove(i);
+//                arrayAdapter.notifyDataSetChanged();
+//                FileHandler.writeData(arrayList, getApplicationContext());
+//                editText.setText(arrayList.get(position));
+//                currentlyEditingPosition = position;
+                return true;
+            }
+        });
 
 
     }
